@@ -1,5 +1,5 @@
 # Testing Azure AD CBA
-Certificate Based Authentication is an Azure feature to allow users to sign-in with a smartcard. Testing this feature in a test tenant can be difficult if you don't have a public key infrastructure already established. This document walks through how to quickly set up some test certificates to enable testing the feature.
+Certificate Based Authentication (CBA) is an Azure feature to allow users to sign-in with a smartcard. Testing this feature in a test tenant can be difficult if you don't have a public key infrastructure (PKI) already established. This document walks through how to quickly set up some test certificates to enable testing the feature.
 
 >**This example is for test purposes only. Certificates created following this process are not secure and should never be used for production authentication.**
 
@@ -36,7 +36,7 @@ $UserSubj = "/C=US/O=<YOURORGNAME>/CN=<USERDISPLAYNAME>"`
 $UserPN = "<useremail@domain.name>"
 ```
 
-Next create the certificate request. This request uses a 2048-bit RSA key, which is the maximum size that Yubikey supports. The request command creates a private key (`userkey.pem`) and a request file (`userreq.pem`) to submit to the CA for signing.
+Next create the certificate request. This request uses a 2048-bit RSA key, which is the maximum size that Yubikey supports. The request command creates a private key (`userkey.pem`) and a request file (`userreq.pem`) to submit to the CA for signing. You will be prompted to enter a password to protect the private key.
 
 ```
 openssl req -new -newkey rsa:2048 -keyout userkey.pem -out userreq.pem -subj $UserSubj
@@ -45,7 +45,7 @@ openssl req -new -newkey rsa:2048 -keyout userkey.pem -out userreq.pem -subj $Us
 ### Issue the certificate
 Issuing a certificate simply consists of the CA signing the certificate request using its private key. In addition, the CA can apply extensions to the certificate. With a production CA, the extensions are usually added automatically based on a certificate template. Here we will define and apply them manually.
 
-First, create a configuration file to hold the required extensions. These extensions specify the values for the subject alternate name field, and the usage and extended usage attributes of the certificate. The usage attributes help indicate to Azure AD that the certificate is intended for authenticating a user. The `Set-Content` command is used to create the file to ensure that it is in the Unix format that OpenSSL expects.
+First, create a configuration file to hold the required extensions. These extensions specify the values for the subject alternate name field and the usage and extended usage attributes of the certificate. The usage attributes help indicate to Azure AD that the certificate is intended for authenticating a user. The `Set-Content` command is used to create the file to ensure that it is in the Unix format that OpenSSL expects.
 
 ```powershell
 $SAN = @(
@@ -56,7 +56,7 @@ $SAN = @(
 Set-Content -Path .\cert.cfg -NoNewline -Encoding utf8 -Value (($SAN -join "`n") + "`n")
 ```
 
-Sign the certificate using the CA certificate and private key. The command will prompt for the password that you specified when creating the CA private key.
+Sign the certificate using the CA certificate and private key. The command will prompt for the password that you specified when creating the **CA** private key.
 
 ```
 openssl x509 -req -in userreq.pem -days 365 -CA cacert.pem -CAkey capriv.pem -CAcreateserial -out user.pem -extfile cert.cfg

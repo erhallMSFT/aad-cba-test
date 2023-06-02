@@ -66,7 +66,7 @@ catch
 openssl req -x509 -days $CAValidityDays -newkey rsa:$CAKeyLength -keyout capriv.pem -out cacert.pem -subj $CASubj
 # Convert PEM to CER so AAD will accept it.
 openssl x509 -in cacert.pem -out cacert.cer -outform DER
-# Create a certificate request. Note that Yubkikey only supports 2048-bit RSA keys
+# Create a certificate request. Note that Yubkikey only supports a maximium size of 2048-bit RSA keys
 openssl req -new -newkey rsa:$UserKeyLength -keyout userkey.pem -out userreq.pem -subj $UserSubj
 # Generate a config file to populate extensions in the certificate. Set-Content is wonky to create Unix-style line endings
 $SAN = @("subjectAltName=otherName:1.3.6.1.4.1.311.20.2.3;UTF8:$UserPN",
